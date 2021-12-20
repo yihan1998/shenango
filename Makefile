@@ -57,28 +57,34 @@ test_src = $(wildcard tests/*.c)
 test_obj = $(test_src:.c=.o)
 test_targets = $(basename $(test_src))
 
-# dpdk libs
-DPDK_LIBS= -L$(DPDK_PATH)/build/lib
-DPDK_LIBS += -Wl,-whole-archive -lrte_pmd_e1000 -Wl,-no-whole-archive
-DPDK_LIBS += -Wl,-whole-archive -lrte_pmd_ixgbe -Wl,-no-whole-archive
-DPDK_LIBS += -Wl,-whole-archive -lrte_mempool_ring -Wl,-no-whole-archive
-DPDK_LIBS += -ldpdk
-DPDK_LIBS += -lrte_eal
-DPDK_LIBS += -lrte_ethdev
-DPDK_LIBS += -lrte_hash
-DPDK_LIBS += -lrte_mbuf
-DPDK_LIBS += -lrte_mempool
-DPDK_LIBS += -lrte_mempool
-DPDK_LIBS += -lrte_mempool_stack
-DPDK_LIBS += -lrte_ring
-# additional libs for running with Mellanox NICs
-ifneq ($(MLX5),)
-DPDK_LIBS +=  -lrte_pmd_mlx5 -libverbs -lmlx5 -lmnl
-else
-ifneq ($(MLX4),)
-DPDK_LIBS += -lrte_pmd_mlx4 -libverbs -lmlx4
-endif
-endif
+# # dpdk libs
+# DPDK_LIBS= -L$(DPDK_PATH)/build/lib
+# DPDK_LIBS += -Wl,-whole-archive -lrte_pmd_e1000 -Wl,-no-whole-archive
+# DPDK_LIBS += -Wl,-whole-archive -lrte_pmd_ixgbe -Wl,-no-whole-archive
+# DPDK_LIBS += -Wl,-whole-archive -lrte_mempool_ring -Wl,-no-whole-archive
+# DPDK_LIBS += -ldpdk
+# DPDK_LIBS += -lrte_eal
+# DPDK_LIBS += -lrte_ethdev
+# DPDK_LIBS += -lrte_hash
+# DPDK_LIBS += -lrte_mbuf
+# DPDK_LIBS += -lrte_mempool
+# DPDK_LIBS += -lrte_mempool
+# DPDK_LIBS += -lrte_mempool_stack
+# DPDK_LIBS += -lrte_ring
+# # additional libs for running with Mellanox NICs
+# ifneq ($(MLX5),)
+# DPDK_LIBS +=  -lrte_pmd_mlx5 -libverbs -lmlx5 -lmnl
+# else
+# ifneq ($(MLX4),)
+# DPDK_LIBS += -lrte_pmd_mlx4 -libverbs -lmlx4
+# endif
+# endif
+
+# DPDK
+LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
+LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
+CFLAGS += $(LIBDPDK_CFLAGS)
+LDFLAGS += $(LIBDPDK_LDFLAGS)
 
 # must be first
 all: libbase.a libnet.a libruntime.a iokerneld iokerneld-noht $(test_targets)
@@ -92,12 +98,20 @@ libnet.a: $(net_obj)
 libruntime.a: $(runtime_obj)
 	$(AR) rcs $@ $^
 
+# iokerneld: $(iokernel_obj) libbase.a libnet.a base/base.ld
+# 	$(LD) $(LDFLAGS) -o $@ $(iokernel_obj) libbase.a libnet.a $(DPDK_LIBS) \
+# 	-lpthread -lnuma -ldl
+
 iokerneld: $(iokernel_obj) libbase.a libnet.a base/base.ld
-	$(LD) $(LDFLAGS) -o $@ $(iokernel_obj) libbase.a libnet.a $(DPDK_LIBS) \
+	$(LD) $(LDFLAGS) -o $@ $(iokernel_obj) libbase.a libnet.a \
 	-lpthread -lnuma -ldl
 
+# iokerneld-noht: $(iokernel_noht_obj) libbase.a libnet.a base/base.ld
+# 	$(LD) $(LDFLAGS) -o $@ $(iokernel_noht_obj) libbase.a libnet.a $(DPDK_LIBS) \
+# 	 -lpthread -lnuma -ldl
+
 iokerneld-noht: $(iokernel_noht_obj) libbase.a libnet.a base/base.ld
-	$(LD) $(LDFLAGS) -o $@ $(iokernel_noht_obj) libbase.a libnet.a $(DPDK_LIBS) \
+	$(LD) $(LDFLAGS) -o $@ $(iokernel_noht_obj) libbase.a libnet.a \
 	 -lpthread -lnuma -ldl
 
 $(test_targets): $(test_obj) libbase.a libruntime.a libnet.a base/base.ld
