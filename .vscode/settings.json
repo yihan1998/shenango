@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "rte_mbuf.h": "c"
+        "rte_mbuf.h": "c",
+        "rte_string_fns.h": "c",
+        "rte_mempool.h": "c"
     }
 }
