@@ -1,6 +1,9 @@
 # DPDK_PATH = dpdk
 # INC     = -I./inc -I$(DPDK_PATH)/build/include
-INC     = -I./inc
+
+# DPDK
+LIBDPDK	:= $(shell pkg-config --cflags libdpdk)
+INC     = -I./inc $(LIBDPDK)
 CFLAGS  = -g -Wall -std=gnu11 -D_GNU_SOURCE $(INC) -mssse3
 LDFLAGS = -T base/base.ld -no-pie
 LD	= gcc
@@ -81,11 +84,7 @@ test_targets = $(basename $(test_src))
 # endif
 # endif
 
-# DPDK
-LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
-LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
-CFLAGS += $(LIBDPDK_CFLAGS)
-LDFLAGS += $(LIBDPDK_LDFLAGS)
+DPDK_LIBS := $(shell pkg-config --libs libdpdk)
 
 # must be first
 all: libbase.a libnet.a libruntime.a iokerneld iokerneld-noht $(test_targets)
@@ -99,20 +98,12 @@ libnet.a: $(net_obj)
 libruntime.a: $(runtime_obj)
 	$(AR) rcs $@ $^
 
-# iokerneld: $(iokernel_obj) libbase.a libnet.a base/base.ld
-# 	$(LD) $(LDFLAGS) -o $@ $(iokernel_obj) libbase.a libnet.a $(DPDK_LIBS) \
-# 	-lpthread -lnuma -ldl
-
 iokerneld: $(iokernel_obj) libbase.a libnet.a base/base.ld
-	$(LD) $(LDFLAGS) -o $@ $(iokernel_obj) libbase.a libnet.a \
+	$(LD) $(LDFLAGS) -o $@ $(iokernel_obj) libbase.a libnet.a $(DPDK_LIBS) \
 	-lpthread -lnuma -ldl
 
-# iokerneld-noht: $(iokernel_noht_obj) libbase.a libnet.a base/base.ld
-# 	$(LD) $(LDFLAGS) -o $@ $(iokernel_noht_obj) libbase.a libnet.a $(DPDK_LIBS) \
-# 	 -lpthread -lnuma -ldl
-
 iokerneld-noht: $(iokernel_noht_obj) libbase.a libnet.a base/base.ld
-	$(LD) $(LDFLAGS) -o $@ $(iokernel_noht_obj) libbase.a libnet.a \
+	$(LD) $(LDFLAGS) -o $@ $(iokernel_noht_obj) libbase.a libnet.a $(DPDK_LIBS) \
 	 -lpthread -lnuma -ldl
 
 $(test_targets): $(test_obj) libbase.a libruntime.a libnet.a base/base.ld
