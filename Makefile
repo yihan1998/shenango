@@ -1,5 +1,6 @@
-DPDK_PATH = dpdk
-INC     = -I./inc -I$(DPDK_PATH)/build/include
+# DPDK_PATH = dpdk
+# INC     = -I./inc -I$(DPDK_PATH)/build/include
+INC     = -I./inc
 CFLAGS  = -g -Wall -std=gnu11 -D_GNU_SOURCE $(INC) -mssse3
 LDFLAGS = -T base/base.ld -no-pie
 LD	= gcc
